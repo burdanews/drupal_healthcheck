@@ -1,0 +1,6 @@
+name: Drupal Healthcheck
+description: This module provides two healthcheck URLs in different verbosity levels.
+package: BurdaNews
+
+type: module
+core: 8.x
