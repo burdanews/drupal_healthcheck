@@ -67,6 +67,7 @@ class HealthcheckController extends ControllerBase {
         }
       }
       
+      $responseData['status'] = $memcachedStatus;
       $responseData['details']['memcached'] = $memcachedStatus;
     }
     
@@ -95,13 +96,16 @@ class HealthcheckController extends ControllerBase {
           if ($clusterHealth['status'] !== 'green') {
             $elasticStatus = 0;
             $httpStatus = 500;
+            break;
           }
         } else {
           $elasticStatus = 0;
           $httpStatus = 500;
+          break;
         }
       }
       
+      $responseData['status'] = $elasticStatus;
       $responseData['details']['elasticsearch'] = $elasticStatus;
     }
     
