@@ -4,6 +4,7 @@ namespace Drupal\drupal_healthcheck\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Extension\ModuleHandlerInterface;
+use Drupal\Core\PageCache\ResponsePolicy\KillSwitch;
 use Drupal\Core\Site\Settings;
 use Drupal\elasticsearch_connector\ClusterManager;
 use Drupal\elasticsearch_connector\ElasticSearch\ClientManagerInterface;
@@ -13,12 +14,22 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Drupal\Core\Database\Database;
 
 class HealthcheckController extends ControllerBase {
+  
+  /**
+   * The page cache kill switch.
+   *
+   * @var \Drupal\Core\PageCache\ResponsePolicy\KillSwitch
+   */
+  protected $killSwitch;
+  
   /**
    * HealthcheckController constructor.
    * @param ModuleHandlerInterface $module_handler
+   * @param KillSwitch $kill_switch
    */
-  public function __construct(ModuleHandlerInterface $module_handler) {
+  public function __construct(ModuleHandlerInterface $module_handler, KillSwitch $kill_switch) {
     $this->moduleHandler = $module_handler;
+    $this->killSwitch = $kill_switch;
   }
   
   /**
@@ -27,11 +38,13 @@ class HealthcheckController extends ControllerBase {
    */
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('module_handler')
+      $container->get('module_handler'),
+      $container->get('page_cache_kill_switch')
     );
   }
   
   public function healthcheck() {
+    $this->killSwitch->trigger();
     $httpStatus = 200;
     
     $responseData = [
@@ -113,6 +126,7 @@ class HealthcheckController extends ControllerBase {
   }
   
   public function status() {
+    $this->killSwitch->trigger();
     $responseData = [
       'status' => 1,
       'time' => time()
