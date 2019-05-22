@@ -122,7 +122,9 @@ class HealthcheckController extends ControllerBase {
       $responseData['details']['elasticsearch'] = $elasticStatus;
     }
     
-    return new JsonResponse($responseData, $httpStatus);
+    $response = new JsonResponse($responseData, $httpStatus);
+    
+    return $this->uncacheableResponse($response);
   }
   
   public function status() {
@@ -132,6 +134,20 @@ class HealthcheckController extends ControllerBase {
       'time' => time()
     ];
     
-    return new JsonResponse($responseData, 200);
+    $response = new JsonResponse($responseData, 200);
+    
+    return $this->uncacheableResponse($response);
+  }
+  
+  private function uncacheableResponse(JsonResponse $response) : JsonResponse {
+    $response->setPrivate();
+    $response->setMaxAge(0);
+    $response->setSharedMaxAge(0);
+    $response->headers->addCacheControlDirective('must-revalidate', true);
+    $response->headers->addCacheControlDirective('no-store', true);
+    $response->headers->addCacheControlDirective('private', true);
+    $response->headers->removeCacheControlDirective('public');
+    
+    return $response;
   }
 }
