@@ -58,6 +58,7 @@ class HealthcheckController extends ControllerBase {
     $responseData['details']['db'] = $db;
     if (!$db) {
       $httpStatus = 500;
+      $responseData['status'] = 0;
     }
     
     // MEMCACHED CONNECTION
@@ -75,12 +76,12 @@ class HealthcheckController extends ControllerBase {
           {
             $memcachedStatus = 0;
             $httpStatus = 500;
+            $responseData['status'] = 0;
             break;
           }
         }
       }
       
-      $responseData['status'] = $memcachedStatus;
       $responseData['details']['memcached'] = $memcachedStatus;
     }
     
@@ -109,16 +110,17 @@ class HealthcheckController extends ControllerBase {
           if ($clusterHealth['status'] !== 'green') {
             $elasticStatus = 0;
             $httpStatus = 500;
+            $responseData['status'] = 0;
             break;
           }
         } else {
           $elasticStatus = 0;
           $httpStatus = 500;
+          $responseData['status'] = 0;
           break;
         }
       }
       
-      $responseData['status'] = $elasticStatus;
       $responseData['details']['elasticsearch'] = $elasticStatus;
     }
     
