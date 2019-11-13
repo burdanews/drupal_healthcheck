@@ -63,7 +63,8 @@ class HealthcheckController extends ControllerBase {
 
     // DATABASE READ ONLY SETTING
     $dbReadOnly = \Drupal::database()->query('SHOW VARIABLES')->fetchAllKeyed()['read_only'];
-    $responseData['details']['db-writeable'] = $dbReadOnly === 'OFF' ? 1 : 0;
+    $dbReadOnlyBool = $dbReadOnly === 'OFF' ? 1 : 0;
+    $responseData['details']['db-writeable'] = $dbReadOnlyBool;
     if ($dbReadOnly === 'ON') {
       $httpStatus = 500;
       $responseData['status'] = 0;
