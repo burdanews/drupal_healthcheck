@@ -14,14 +14,14 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Drupal\Core\Database\Database;
 
 class HealthcheckController extends ControllerBase {
-  
+
   /**
    * The page cache kill switch.
    *
    * @var \Drupal\Core\PageCache\ResponsePolicy\KillSwitch
    */
   protected $killSwitch;
-  
+
   /**
    * HealthcheckController constructor.
    * @param ModuleHandlerInterface $module_handler
@@ -31,7 +31,7 @@ class HealthcheckController extends ControllerBase {
     $this->moduleHandler = $module_handler;
     $this->killSwitch = $kill_switch;
   }
-  
+
   /**
    * @param ContainerInterface $container
    * @return HealthcheckController|ControllerBase
@@ -42,17 +42,17 @@ class HealthcheckController extends ControllerBase {
       $container->get('page_cache_kill_switch')
     );
   }
-  
+
   public function healthcheck() {
     $this->killSwitch->trigger();
     $httpStatus = 200;
-    
+
     $responseData = [
       'status' => 1,
       'time' => time(),
       'details' => []
     ];
-    
+
     // DATABASE CONNECTION
     $db = (int) Database::getConnectionInfo('default');
     $responseData['details']['db'] = $db;
@@ -60,16 +60,24 @@ class HealthcheckController extends ControllerBase {
       $httpStatus = 500;
       $responseData['status'] = 0;
     }
-    
+
+    // DATABASE READ ONLY SETTING
+    $dbReadOnly = \Drupal::database()->query('SHOW VARIABLES')->fetchAllKeyed()['read_only'];
+    $responseData['details']['db-writeable'] = $dbReadOnly === 'OFF' ? 1 : 0;
+    if ($dbReadOnly === 'ON') {
+      $httpStatus = 500;
+      $responseData['status'] = 0;
+    }
+
     // MEMCACHED CONNECTION
     if ($this->moduleHandler->moduleExists('memcache') && $memcachedSettings = Settings::get('memcache')) {
       $memcached = new \Memcached();
       $memcachedStatus = 1;
-      
+
       if (array_key_exists('servers', $memcachedSettings)) {
         foreach ($memcachedSettings['servers'] as $key => $value) {
           $hostAndPort = explode(':', $key);
-          
+
           if ($hostAndPort &&
             $memcached->addServer($hostAndPort[0], $hostAndPort[1]) &&
             !($memcached->getStats()[$hostAndPort[0].':'.$hostAndPort[1]]['pid'] > 0))
@@ -81,10 +89,10 @@ class HealthcheckController extends ControllerBase {
           }
         }
       }
-      
+
       $responseData['details']['memcached'] = $memcachedStatus;
     }
-    
+
     // ELASTICSEARCH CONNECTION
     if ($this->moduleHandler->moduleExists('elasticsearch_connector')) {
       $elasticStatus = 1;
@@ -97,16 +105,16 @@ class HealthcheckController extends ControllerBase {
        */
       $clientManager = \Drupal::service('elasticsearch_connector.client_manager');
       $clusters = $clusterManager->loadAllClusters();
-      
+
       foreach ($clusters as $cluster) {
         /**
          * @var ClientInterface $client
          */
         $client = $clientManager->getClientForCluster($cluster);
-        
+
         if ($client->isClusterOk()) {
           $clusterHealth = $client->cluster()->health();
-          
+
           if ($clusterHealth['status'] !== 'green') {
             $elasticStatus = 0;
             $httpStatus = 500;
@@ -120,27 +128,27 @@ class HealthcheckController extends ControllerBase {
           break;
         }
       }
-      
+
       $responseData['details']['elasticsearch'] = $elasticStatus;
     }
-    
+
     $response = new JsonResponse($responseData, $httpStatus);
-    
+
     return $this->uncacheableResponse($response);
   }
-  
+
   public function status() {
     $this->killSwitch->trigger();
     $responseData = [
       'status' => 1,
       'time' => time()
     ];
-    
+
     $response = new JsonResponse($responseData, 200);
-    
+
     return $this->uncacheableResponse($response);
   }
-  
+
   private function uncacheableResponse(JsonResponse $response) : JsonResponse {
     $response->setPrivate();
     $response->setMaxAge(0);
@@ -149,7 +157,7 @@ class HealthcheckController extends ControllerBase {
     $response->headers->addCacheControlDirective('no-store', true);
     $response->headers->addCacheControlDirective('private', true);
     $response->headers->removeCacheControlDirective('public');
-    
+
     return $response;
   }
 }
