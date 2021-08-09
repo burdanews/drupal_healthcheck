@@ -1,0 +1,15 @@
+burdanews_healthcheck.healthcheck:
+  path: '/monitoring/healthcheck'
+  defaults:
+    _controller: '\Drupal\drupal_healthcheck\Controller\HealthcheckController::healthcheck'
+    _title: 'Monitoring Healthcheck'
+  requirements:
+    _access: 'TRUE'
+
+burdanews_healthcheck.status:
+  path: '/monitoring/status'
+  defaults:
+    _controller: '\Drupal\drupal_healthcheck\Controller\HealthcheckController::status'
+    _title: 'Monitoring Status'
+  requirements:
+    _access: 'TRUE'

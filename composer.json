@@ -1,0 +1,6 @@
+{
+  "name": "burdanews/drupal_healthcheck",
+  "type": "drupal-module",
+  "description": "Drupal Healthcheck",
+  "minimum-stability": "dev"
+}
