@@ -81,8 +81,11 @@ class HealthcheckController extends ControllerBase {
 
           if ($hostAndPort &&
             $memcached->addServer($hostAndPort[0], $hostAndPort[1]) &&
-            !($memcached->getStats()[$hostAndPort[0].':'.$hostAndPort[1]]['pid'] > 0))
-          {
+            (
+              empty($memcached->getStats()[$hostAndPort[0].':'.$hostAndPort[1]]['pid']) ||
+              !($memcached->getStats()[$hostAndPort[0].':'.$hostAndPort[1]]['pid'] > 0)
+            )
+          ) {
             $memcachedStatus = 0;
             $httpStatus = 500;
             $responseData['status'] = 0;
